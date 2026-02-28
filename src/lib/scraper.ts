@@ -3,130 +3,119 @@ import { TrendingItem, TrendingSource, CategoryData, CategoryType } from '@/type
 
 const TOPHUB_BASE = 'https://tophub.today';
 
-// 15个必抓取的热榜源配置
-const HOT_SOURCES = [
-  { name: '知乎热榜', node: 'mproPpoq6O', category: '社区' as CategoryType },
-  { name: '微博热搜', node: 'KqndgxeLl9', category: '热搜' as CategoryType },
-  { name: '微信24h热文', node: 'WnBe01o371', category: '微信' as CategoryType },
-  { name: '澎湃热榜', node: 'wWmoO5Rd4E', category: '资讯' as CategoryType },
-  { name: '百度热点', node: 'Jb0vmloB1G', category: '热搜' as CategoryType },
-  { name: 'B站日榜', node: '74KvxwokxM', category: '娱乐' as CategoryType },
-  { name: '36氪热榜', node: 'Q1Vd5Ko85R', category: '资讯' as CategoryType },
-  { name: '抖音总榜', node: 'DpQvNABoNE', category: '热搜' as CategoryType },
-  { name: '少数派', node: 'Y2KeDGQdNP', category: '科技' as CategoryType },
-  { name: '今日头条', node: 'x9ozB4KoXb', category: '资讯' as CategoryType },
-  { name: '豆瓣新片榜', node: 'mDOvnyBoEB', category: '娱乐' as CategoryType },
-  { name: '虎嗅热文', node: '5VaobgvAj1', category: '资讯' as CategoryType },
-  { name: '百度贴吧', node: 'Om4ejxvxEN', category: '社区' as CategoryType },
-  { name: '虎扑步行街', node: 'G47o8weMmN', category: '社区' as CategoryType },
-  { name: '知乎日报', node: 'KMZd7VOvrO', category: '科技' as CategoryType },
-];
+const SOURCE_CATEGORY: Record<string, CategoryType> = {
+  '微博': '热搜', '百度': '热搜', '抖音': '热搜',
+  '知乎': '社区', '百度贴吧': '社区', '虎扑社区': '社区', '吾爱破解': '社区',
+  '哔哩哔哩': '娱乐', '豆瓣电影': '娱乐', '猫眼': '娱乐', 'AcFun': '娱乐', '快手': '娱乐',
+  '腾讯新闻': '资讯', '36氪': '资讯', '虎嗅网': '资讯', 'IT之家': '资讯',
+  '少数派': '科技', '掘金': '科技', 'GitHub': '科技', 'CSDN博客': '科技',
+  '机器之心': '科技', '量子位': '科技', '开源中国': '科技', 'Product Hunt': '科技',
+  '微信': '微信', '微信读书': '微信',
+};
 
-// 抓取单个热榜源
-async function scrapeSingleSource(config: typeof HOT_SOURCES[0]): Promise<TrendingSource | null> {
+const WANTED_SOURCES = new Set([
+  '微博', '知乎', '百度', '微信', '抖音',
+  '哔哩哔哩', '36氪', '少数派', '虎嗅网', 'IT之家',
+  '腾讯新闻', '百度贴吧', '虎扑社区', '快手',
+  '豆瓣电影', '猫眼', '吾爱破解', 'AcFun',
+  '掘金', 'GitHub', 'CSDN博客', '机器之心',
+  '量子位', '开源中国', 'Product Hunt',
+  '知乎日报', '微信读书', '雪球',
+]);
+
+export async function scrapeAllSources(): Promise<TrendingSource[]> {
   try {
-    const url = `${TOPHUB_BASE}/n/${config.node}`;
-    const response = await fetch(url, {
+    const response = await fetch(TOPHUB_BASE, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       },
-      next: { revalidate: 300 }, // 缓存5分钟
+      next: { revalidate: 300 },
     });
 
     if (!response.ok) {
-      console.error(`Failed to fetch ${config.name}: ${response.status}`);
-      return null;
+      console.error(`Failed to fetch tophub homepage: ${response.status}`);
+      return [];
     }
 
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    const items: TrendingItem[] = [];
+    const sources: TrendingSource[] = [];
+    const seenNames = new Set<string>();
 
-    // 解析热榜列表
-    $('.cc-cd-cb-l a').each((index, element) => {
-      const $link = $(element);
-      const title = $link.find('.t').text().trim();
-      const heat = $link.find('.e').text().trim();
-      const href = $link.attr('href') || '';
+    $('.cc-cd').each((_, cardEl) => {
+      const $card = $(cardEl);
+      const sourceName = $card.find('.cc-cd-lb').text().trim();
 
-      if (title && index < 30) { // 取前30条
-        items.push({
-          rank: index + 1,
-          title,
-          heat: heat || undefined,
-          source: config.name,
-          link: href.startsWith('http') ? href : `${TOPHUB_BASE}${href}`,
-          category: config.category,
-        });
+      if (!sourceName || !WANTED_SOURCES.has(sourceName) || seenNames.has(sourceName)) return;
+      seenNames.add(sourceName);
+
+      const items: TrendingItem[] = [];
+      const category = SOURCE_CATEGORY[sourceName] || '资讯';
+
+      $card.find('.cc-cd-cb-l a').each((index, linkEl) => {
+        if (index >= 25) return;
+        const $link = $(linkEl);
+        const title = $link.find('.t').text().trim();
+        const heat = $link.find('.e').text().trim();
+        const href = $link.attr('href') || '';
+
+        if (title) {
+          items.push({
+            rank: index + 1,
+            title,
+            heat: heat || undefined,
+            source: sourceName,
+            link: href.startsWith('http') ? href : `${TOPHUB_BASE}${href}`,
+            category,
+          });
+        }
+      });
+
+      if (items.length > 0) {
+        sources.push({ name: sourceName, items });
       }
     });
 
-    if (items.length === 0) {
-      console.warn(`No items found for ${config.name}`);
-      return null;
-    }
-
-    return {
-      name: config.name,
-      items,
-    };
+    console.log(`Scraped ${sources.length} sources with ${sources.reduce((sum, s) => sum + s.items.length, 0)} total items`);
+    return sources;
   } catch (error) {
-    console.error(`Error scraping ${config.name}:`, error);
-    return null;
+    console.error('Error scraping tophub homepage:', error);
+    return [];
   }
 }
 
-// 并行抓取所有源
-export async function scrapeAllSources(): Promise<TrendingSource[]> {
-  const results = await Promise.all(
-    HOT_SOURCES.map(config => scrapeSingleSource(config))
-  );
-
-  return results.filter((source): source is TrendingSource => source !== null);
-}
-
-// 按分类组织数据
 export async function scrapeAllCategories(): Promise<CategoryData[]> {
   const allSources = await scrapeAllSources();
 
-  // 按分类分组
   const categoryMap = new Map<CategoryType, TrendingSource[]>();
-
-  // 添加"全部"分类
   categoryMap.set('全部', allSources);
 
-  // 按分类分组
   allSources.forEach(source => {
-    const category = HOT_SOURCES.find(s => s.name === source.name)?.category || '资讯';
-    if (!categoryMap.has(category)) {
-      categoryMap.set(category, []);
-    }
+    const category = (SOURCE_CATEGORY[source.name] || '资讯') as CategoryType;
+    if (!categoryMap.has(category)) categoryMap.set(category, []);
     categoryMap.get(category)!.push(source);
   });
 
-  // 转换为CategoryData数组
   const categories: CategoryData[] = [];
-  categoryMap.forEach((sources, category) => {
-    categories.push({
-      category,
-      emoji: getCategoryEmoji(category),
-      sources,
-    });
+  const order: CategoryType[] = ['全部', '热搜', '社区', '娱乐', '资讯', '科技', '微信'];
+
+  order.forEach(cat => {
+    const sources = categoryMap.get(cat);
+    if (sources && sources.length > 0) {
+      categories.push({ category: cat, emoji: getCategoryEmoji(cat), sources });
+    }
   });
 
   return categories;
 }
 
 function getCategoryEmoji(category: string): string {
-  const emojiMap: Record<string, string> = {
-    '全部': '📚',
-    '热搜': '🔥',
-    '社区': '💬',
-    '娱乐': '🎬',
-    '资讯': '📰',
-    '科技': '💡',
-    '微信': '💚',
+  const map: Record<string, string> = {
+    '全部': '📚', '热搜': '🔥', '社区': '💬', '娱乐': '🎬',
+    '资讯': '📰', '科技': '💡', '微信': '💚',
   };
-  return emojiMap[category] || '📌';
+  return map[category] || '📌';
 }
