@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FAF8F5;
+  --foreground: #333333;
+  --paper-cream: #F5F0EB;
+  --pencil-gray: #555555;
+  --pencil-light: #888888;
+  --accent-rose: #C4756E;
+  --accent-blue: #6B8CA8;
+  --accent-green: #7D9B76;
 }
 
 @theme inline {
@@ -14,8 +20,11 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #2B2B2B;
+    --foreground: #F5F5F5;
+    --paper-cream: #3A3A3A;
+    --pencil-gray: #CCCCCC;
+    --pencil-light: #999999;
   }
 }
 
@@ -25,36 +34,176 @@ body {
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
 }
 
-/* Shimmer 加载动画 */
-@keyframes shimmer {
+/* 纸张纹理背景 */
+.paper-texture {
+  background-color: #FAF8F5;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 31px,
+      rgba(0, 0, 0, 0.03) 31px,
+      rgba(0, 0, 0, 0.03) 32px
+    );
+}
+
+.dark .paper-texture {
+  background-color: #2B2B2B;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 31px,
+      rgba(255, 255, 255, 0.05) 31px,
+      rgba(255, 255, 255, 0.05) 32px
+    );
+}
+
+/* 笔记本横线纸效果 */
+.lined-paper {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    #E5E5E5 31px,
+    #E5E5E5 32px
+  );
+}
+
+.dark .lined-paper {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    rgba(255, 255, 255, 0.1) 31px,
+    rgba(255, 255, 255, 0.1) 32px
+  );
+}
+
+/* 手绘边框效果 */
+.sketch-border {
+  border: 2px solid #333;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  position: relative;
+}
+
+.dark .sketch-border {
+  border-color: #888;
+}
+
+/* 手绘圆圈效果（用于排名数字） */
+.sketch-circle {
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  position: relative;
+}
+
+.sketch-circle::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.3;
+  transform: rotate(3deg);
+}
+
+/* 纸张卡片效果 */
+.paper-card {
+  background: #FEFDFB;
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.dark .paper-card {
+  background: #3A3A3A;
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* 卡片轻微旋转效果 */
+.paper-card-rotate-1 {
+  transform: rotate(-0.5deg);
+}
+
+.paper-card-rotate-2 {
+  transform: rotate(0.5deg);
+}
+
+.paper-card-rotate-3 {
+  transform: rotate(-0.3deg);
+}
+
+/* 撕纸边缘效果 */
+.torn-edge {
+  position: relative;
+}
+
+.torn-edge::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 10%,
+    currentColor 10%,
+    currentColor 20%,
+    transparent 20%,
+    transparent 30%,
+    currentColor 30%,
+    currentColor 35%,
+    transparent 35%,
+    transparent 45%,
+    currentColor 45%,
+    currentColor 55%,
+    transparent 55%,
+    transparent 65%,
+    currentColor 65%,
+    currentColor 70%,
+    transparent 70%,
+    transparent 80%,
+    currentColor 80%,
+    currentColor 90%,
+    transparent 90%
+  );
+  opacity: 0.1;
+}
+
+/* 素描绘制动画 */
+@keyframes sketch-draw {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sketch-draw {
+  animation: sketch-draw 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 铅笔书写动画 */
+@keyframes pencil-write {
   0% {
-    background-position: -1000px 0;
+    opacity: 0;
+    transform: translateX(-10px);
   }
   100% {
-    background-position: 1000px 0;
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-.shimmer {
-  animation: shimmer 2s infinite linear;
-  background: linear-gradient(
-    to right,
-    #f0f0f0 0%,
-    #ffc0cb 20%,
-    #f0f0f0 40%,
-    #f0f0f0 100%
-  );
-  background-size: 1000px 100%;
-}
-
-.dark .shimmer {
-  background: linear-gradient(
-    to right,
-    #1f2937 0%,
-    #4a1f3a 20%,
-    #1f2937 40%,
-    #1f2937 100%
-  );
+.pencil-write {
+  animation: pencil-write 0.4s ease-out forwards;
 }
 
 /* 淡入动画 */
@@ -73,41 +222,28 @@ body {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* 脉冲动画 */
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* 渐变文字效果 */
-.gradient-text {
-  background: linear-gradient(135deg, #FFB6C1 0%, #DDA0DD 50%, #B19CD9 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* 卡片悬停提升动画 */
-.card-lift {
+/* 卡片悬停效果 */
+.card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(255, 182, 193, 0.3), 0 10px 10px -5px rgba(221, 160, 221, 0.2);
+.card-hover:hover {
+  transform: translateY(-4px) rotate(0deg) !important;
+  box-shadow:
+    4px 8px 16px rgba(0, 0, 0, 0.15),
+    0 0 0 2px rgba(196, 117, 110, 0.2);
 }
 
-/* 自定义滚动条 */
+/* 手写字体样式类 */
+.handwriting {
+  font-family: 'Caveat', 'Ma Shan Zheng', cursive;
+}
+
+.handwriting-zh {
+  font-family: 'Ma Shan Zheng', 'ZCOOL XiaoWei', cursive;
+}
+
+/* 自定义滚动条 - 铅笔风格 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -118,12 +254,20 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #FFB6C1, #DDA0DD);
-  border-radius: 10px;
+  background: #888;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #FF9FB0, #CC8FCC);
+  background: #555;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #666;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }
 
 /* 隐藏滚动条但保持功能 */
@@ -138,27 +282,76 @@ body {
 
 /* 玻璃态效果 */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 .dark .glass {
-  background: rgba(17, 24, 39, 0.7);
+  background: rgba(43, 43, 43, 0.8);
 }
 
-/* 排名徽章特效 */
+/* 排名徽章 - 手绘圆圈风格 */
+.rank-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .rank-badge-gold {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  color: #B8860B;
+  font-weight: bold;
 }
 
 .rank-badge-silver {
-  background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%);
-  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.4);
+  color: #708090;
+  font-weight: bold;
 }
 
 .rank-badge-bronze {
-  background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%);
-  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
+  color: #8B4513;
+  font-weight: bold;
+}
+
+/* Shimmer 加载动画 - 铅笔素描风格 */
+@keyframes sketch-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  animation: sketch-shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    #F5F0EB 0%,
+    #E5E5E5 20%,
+    #F5F0EB 40%,
+    #F5F0EB 100%
+  );
+  background-size: 1000px 100%;
+}
+
+.dark .shimmer {
+  background: linear-gradient(
+    to right,
+    #3A3A3A 0%,
+    #4A4A4A 20%,
+    #3A3A3A 40%,
+    #3A3A3A 100%
+  );
+}
+
+/* 装饰性铅笔图标 */
+.pencil-icon::before {
+  content: '✏️';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 16px;
+  opacity: 0.6;
 }

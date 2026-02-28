@@ -20,4 +20,4 @@ export interface CategoryData {
   sources: TrendingSource[];
 }
 
-export type CategoryType = '热搜' | '社区' | '娱乐' | '购物' | '资讯' | '科技';
+export type CategoryType = '全部' | '热搜' | '社区' | '娱乐' | '资讯' | '科技' | '微信';
